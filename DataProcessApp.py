@@ -29,7 +29,8 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         exitAction.setShortcut('Ctrl+S')
         openAction.triggered.connect(self.openActionSlot)
         editMenu = self.menuBar.addMenu('&Edit')
-
+        undoAction = editMenu.addAction(QtGui.QIcon('./images/actions/undo.png'),'&undo')
+        undoAction.setShortcut('Ctrl+Z')
 
         
     def setupToolBar(self):               
