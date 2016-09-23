@@ -25,6 +25,8 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         saveAction.setShortcut('Ctrl+S')
         saveasAction = fileMenu.addAction(QtGui.QIcon('./images/file/filesaveas.png'),'&saveas')
         closeAction = fileMenu.addAction(QtGui.QIcon('./images/file/fileclose.png'),'&close')
+        exitAction = fileMenu.addAction(QtGui.QIcon('./images/actions/exit.png'),'&exit')
+        exitAction.setShortcut('Ctrl+S')
         openAction.triggered.connect(self.openActionSlot)
         editMenu = self.menuBar.addMenu('&Edit')
 
