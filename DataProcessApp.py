@@ -6,9 +6,12 @@ Created on Fri Sep 23 13:20:16 2016
 """
 
 import sys
+import os
+import re
 from PyQt4 import QtGui, QtCore
 
 import DataProcessUi
+import TreeModel
 
 class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
     def __init__(self, parent = None):
@@ -22,6 +25,9 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         self.splitter.addWidget(self.widget_mid)
         self.splitter.addWidget(self.widget_right)
         self.setCentralWidget(self.splitter)
+        
+        self.DataSpace = None
+        self.SelectFiles = []
         
         
     def setupMenuBar(self):
@@ -40,7 +46,7 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         undoAction = editMenu.addAction(QtGui.QIcon('./images/actions/undo.png'),'&undo')
         undoAction.setShortcut('Ctrl+Z')
         fileMenu.triggered[QtGui.QAction].connect(self.fileMenuActionSlot)
-        
+        undoAction.triggered.connect(self.showSelection)
         
         
     def setupToolBar(self):               
@@ -54,8 +60,19 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
             print(name)
             
         if q.text() == '&Open Fold' :
-            name = QtGui.QFileDialog.getExistingDirectory(self, 'Open fold','./')
-            print(name)
+            self.DataSpace = QtGui.QFileDialog.getExistingDirectory(self, 'Open fold','./')
+            print(self.DataSpace)
+            tree_data = TreeModel.dirsTree(self.DataSpace,'.+\.dlg')
+            self.fileTreeModel = TreeModel.TreeModel(tree_data)
+            self.treeFile.setModel(self.fileTreeModel)
+            self.treeFile.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+
+    def showSelection(self):
+        for index in self.treeFile.selectedIndexes() :
+            if index.isValid():
+                print( TreeModel.getDirs(self.fileTreeModel.getTreePath(index)))
+                
+    def getSelectFiles(self):
         
 def main():
     app = QtGui.QApplication(sys.argv)
