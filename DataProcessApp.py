@@ -72,7 +72,7 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
             if index.isValid():
                 print( TreeModel.getDirs(self.fileTreeModel.getTreePath(index)))
                 
-    def getSelectFiles(self):
+#    def getSelectFiles(self):
         
 def main():
     app = QtGui.QApplication(sys.argv)

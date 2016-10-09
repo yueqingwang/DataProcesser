@@ -145,10 +145,10 @@ class TreeModel(QtCore.QAbstractItemModel):
             position = 0
             while lineData.pop(0) == '\t':
                 position += 1
-            line.lstrip('\t')
+            line = line.lstrip('\t')
             if line:
                 # Read the column data from the rest of the line.
-                columnData = [s for s in line.split('\t') if s]
+                columnData = [line]
                 if position > indentations[-1]:
                     # The last child of the current parent is now the new
                     # parent unless the current parent has no children.
@@ -172,10 +172,12 @@ class TreeModel(QtCore.QAbstractItemModel):
             parent = self.parent(parent)
         return path_list
             
+            
 def dirsTree(startPath,pattern):
     '''树形打印出目录结构'''
     dirsTreeList = []
     for root, dirs, files in os.walk(startPath):
+        print(root)
         #获取当前目录相对输入目录的层级关系,整数类型
         level = root.replace(startPath, '').count(os.sep)
         #根据目录的层级关系，重复显示'\t'间隔符，
@@ -201,6 +203,7 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     data = dirsTree('D:\\python\\DataProcesser\\FengZhuangHou','.+\.dlg')
+    print(data)
     model = TreeModel(data)
 #    print(model.rowCount(model.rootItem ))
 #    print(model.rootItem.itemData)
@@ -219,4 +222,5 @@ if __name__ == '__main__':
     index = model.index(1,0,index)
     print(model.rowCount(index),model.data(index,0))
     path = model.getTreePath(index)
+    print(path)
     print(getDirs(path))
