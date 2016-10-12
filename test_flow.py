@@ -70,6 +70,16 @@ m9 = re.compile(r)
 def fsm_fun(argfunc,arg):
     argfunc(arg)
 
+pmu_record_col = ['flowID','TestName','PHY','Pin','TestDescription',
+'Force','ForceU','fRange','fRangeU','Measure','MeasureU','mRange',
+'mRangeU','Max','MaxU','Min','MinU','PassFail']
+vlog_record_col = ['flowID','TestName','PHY','Type','TestDescription',
+'VLogDescription','Measure','MeasureU','Max','MaxU','Min','MinU','PassFail']
+dlg_record_col = ['flowID','TestName','line']
+flow_info_col = ['flowID','path','startLine','endLine','Tester ID','Date',
+'Program','Device','Flow','Serial','Kalos2','Lot','Operator','DibPart', 
+'DibSerial','Vendor','System','Comment','Users_C','Result','SortBin','SoftBin']
+
 #状态机运行函数
 #参数—— fsm：状态机字典；state：当前状态；line：当前文本行
 #函数运行方法：通过state，查询fsm；对line进行正则判断，根据判断结果
@@ -91,6 +101,10 @@ class TestResultTree(object):
         self.vlog_records = []
         self.dlg_records = []
         self.sub_flow = []
+        self.current_file_path = None
+        self.current_line = 0
+        self.startLine = 0
+        self.endLine = 0
         self.flow_id = 0 
         self.test_id = None
         self.fsm = {
@@ -134,11 +148,12 @@ class TestResultTree(object):
         nextstate = 's0'
         result = False
         match_count = 0
-        line_count = 0
+        self.current_line = 0
         self.sub_flow = []
+        self.current_file_path = file_path 
         with open(file_path,'r') as f:
             for line in f:
-                line_count += 1
+                self.current_line += 1
                 if line != '\n':
                     nextstate,result = match_fsm(self.fsm,nextstate,line)
                     match_count += 1
@@ -158,6 +173,7 @@ class TestResultTree(object):
     
     def update_flow(self,line):
         self.flow_id += 1
+        self.startLine = self.current_line
         self.head_records = []
     
     def collect_head_record(self,line):
@@ -165,8 +181,12 @@ class TestResultTree(object):
     
     def update_flow_info(self,line):
         self.head_records.append(line)
+        self.endLine = self.current_line
         self.sub_flow.append(self.flow_id)
-        self.flow_info.append(self.flow_id)
+        currnt_flow_info = [self.flow_id,self.current_file_path,
+                            self.startLine,self.endLine]
+        currnt_flow_info += self.head_process()
+        self.flow_info.append(currnt_flow_info)
     
     def update_pmu_record(self,line):
         pmu_record = [self.flow_id,self.test_id] + list(m4.match(line).groups())
@@ -203,7 +223,7 @@ class TestResultTree(object):
         val_result = []
         for val in val_list:
             val_result.append(val_search(val[0],val[1],val[2],line))
-        print(list(map(lambda x:x[0] , val_result)))
+        return list(map(lambda x:x[1] , val_result))
 
         
 def val_search(val,dummy,end,line):
@@ -213,7 +233,7 @@ def val_search(val,dummy,end,line):
     
 if __name__ == '__main__':
     
-    Tree = TestResultTree('D:\\python\\DataProcesser\\1543W','.+\.dlg')
+    Tree = TestResultTree('D:\\python\\DataProcesser\\temperature','.+\.dlg')
 #    print(Tree.treelist)
 #    for i in Tree.head_records:
 #        c = re.split('\w+:',i)
@@ -229,6 +249,8 @@ if __name__ == '__main__':
 #    print(c.groups())
 #    print(val_search('Serial',':','\n',Tree.head_records[1]))
     Tree.head_process()
+    print(Tree.flow_info)
+    print(Tree.treelist)
     
     
     

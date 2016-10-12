@@ -10,8 +10,10 @@ import os
 import re
 from PyQt4 import QtGui, QtCore
 
+
 import DataProcessUi
 import TreeModel
+import test_flow
 
 class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
     def __init__(self, parent = None):
@@ -62,7 +64,9 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         if q.text() == '&Open Fold' :
             self.DataSpace = QtGui.QFileDialog.getExistingDirectory(self, 'Open fold','./')
             print(self.DataSpace)
-            tree_data = TreeModel.dirsTree(self.DataSpace,'.+\.dlg')
+            tree = test_flow.TestResultTree(self.DataSpace,'.+\.dlg')
+            tree_data = tree.treelist
+#            tree_data = TreeModel.dirsTree(self.DataSpace,'.+\.dlg')
             self.fileTreeModel = TreeModel.TreeModel(tree_data)
             self.treeFile.setModel(self.fileTreeModel)
             self.treeFile.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
