@@ -70,6 +70,10 @@ m9 = re.compile(r)
 def fsm_fun(argfunc,arg):
     argfunc(arg)
 
+#状态机运行函数
+#参数—— fsm：状态机字典；state：当前状态；line：当前文本行
+#函数运行方法：通过state，查询fsm；对line进行正则判断，根据判断结果
+#进行call相应的函数，返回下一个状态和是否读取下一行的标志
 def match_fsm(fsm,state,line):
     if fsm[state][0].match(line):
         fsm_fun(fsm[state][5],line)
@@ -81,7 +85,7 @@ def match_fsm(fsm,state,line):
 class TestResultTree(object):
     def __init__(self,startPath,pattern):
         self.root_path = startPath
-        self.head_info = []
+        self.flow_info = []
         self.head_records = []
         self.pmu_records = []
         self.vlog_records = []
@@ -90,17 +94,17 @@ class TestResultTree(object):
         self.flow_id = 0 
         self.test_id = None
         self.fsm = {
-        's0':[m0,'s1','s0',True,True,self.update_flow,self.dummy_loop],
-        's1':[m1,'s2','s1',True,True,self.collect_head_info,self.collect_head_info],
+        's0':[m0,'s1','s0',False,True,self.update_flow,self.dummy_loop],
+        's1':[m1,'s2','s1',True,True,self.collect_head_record,self.collect_head_record],
         's2':[m2,'s3','s8',True,False,self.update_test,self.dummy_loop],
         's3':[m3,'s4','s5',True,False,self.dummy_loop,self.dummy_loop],
         's4':[m4,'s4','s3',True,False,self.update_pmu_record,self.dummy_loop],
         's5':[m5,'s6','s7',True,False,self.dummy_loop,self.dummy_loop],
         's6':[m6,'s6','s5',True,False,self.update_vlog_record,self.dummy_loop],
         's7':[m7,'s7','s2',True,False,self.update_dlg_record,self.dummy_loop],
-        's8':[m8,'s0','s9',True,False,self.update_head_info,self.dummy_loop],
-        's9':[m0,'s0','s10',False,True,self.update_head_info,self.dummy_loop],
-        's10':[m9,'s3','s7',False,True,self.update_head_info,self.dummy_loop]
+        's8':[m8,'s0','s9',True,False,self.update_flow_info,self.dummy_loop],
+        's9':[m0,'s0','s10',False,False,self.dummy_loop,self.dummy_loop],
+        's10':[m9,'s3','s7',False,True,self.dummy_loop,self.update_dlg_record]
         }
         self.setupTree(pattern)
         
@@ -128,6 +132,7 @@ class TestResultTree(object):
                     
     def processFile(self,file_path):
         nextstate = 's0'
+        result = False
         match_count = 0
         line_count = 0
         self.sub_flow = []
@@ -155,12 +160,13 @@ class TestResultTree(object):
         self.flow_id += 1
         self.head_records = []
     
-    def collect_head_info(self,line):
+    def collect_head_record(self,line):
         self.head_records.append(line)
     
-    def update_head_info(self,line):
+    def update_flow_info(self,line):
+        self.head_records.append(line)
         self.sub_flow.append(self.flow_id)
-        self.head_info.append(self.flow_id)
+        self.flow_info.append(self.flow_id)
     
     def update_pmu_record(self,line):
         pmu_record = [self.flow_id,self.test_id] + list(m4.match(line).groups())
@@ -171,17 +177,58 @@ class TestResultTree(object):
         self.vlog_records.append(vlog_record)
     
     def update_dlg_record(self,line):
-        self.dlg_records.append([self.flow_id,self.test_id,line])
-    
+        if m7.match(line) :
+            self.dlg_records.append([self.flow_id,self.test_id,line])
+        else:
+            lastline = self.dlg_records.pop(-1)[-1]
+            lastline = lastline.strip() + '  ' +line
+            self.dlg_records.append([self.flow_id,self.test_id,lastline])
+            
     def dummy_loop(self,line):
         pass
             
-        
+            
+    def head_process(self):
+        line = ''.join(self.head_records)
+        val_list = [['Tester ID',':','Date'],['Date',':','\n'],
+                    ['Program',':','Device'],['Device',':','Flow'],
+                    ['Flow',':','Serial'],['Serial',':','\n'],
+                    ['Kalos2',':','Lot'],['Lot',':','\n'],
+                    ['Operator',':','\n'],['DibPart',':','\n'],
+                    ['DibSerial',':','\n'],['Vendor',':','\n'],
+                    ['System',':','\n'],['Comment',':','\n'],
+                    ['Users_C',':','\n'],['Result','=',','],
+                    ['SortBin','=',','],['SoftBin','=','\n']
+        ]
+        val_result = []
+        for val in val_list:
+            val_result.append(val_search(val[0],val[1],val[2],line))
+        print(list(map(lambda x:x[0] , val_result)))
 
+        
+def val_search(val,dummy,end,line):
+    c = val+dummy+'(.+?)'+end
+    getc = re.search(c,line)
+    return val,getc.group(1).strip()
+    
 if __name__ == '__main__':
     
     Tree = TestResultTree('D:\\python\\DataProcesser\\1543W','.+\.dlg')
 #    print(Tree.treelist)
-#    for i in Tree.pmu_records:
-#        print(i)
+#    for i in Tree.head_records:
+#        c = re.split('\w+:',i)
+#        print(c)
     #print(Tree.pmu_records)
+#    c = re.match('Tester ID:(.+?)Date:(.+?)\n',Tree.head_records[0])
+#    print(c.groups())
+#    c= re.match('Program:(.+?)Device:(.+?)Flow:(.+?)Serial:(.+?)\n',Tree.head_records[1])
+#    print(c.groups())
+#    c= re.search('Program:(.+?)Device:',Tree.head_records[1])
+#    print(c.groups())
+#    c= re.search('Serial:(.+?)\n',Tree.head_records[1])
+#    print(c.groups())
+#    print(val_search('Serial',':','\n',Tree.head_records[1]))
+    Tree.head_process()
+    
+    
+    
