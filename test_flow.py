@@ -25,7 +25,6 @@ self.fsm = {
 
 """
 
-import pandas as pd
 import os
 import re
 
@@ -143,6 +142,7 @@ class TestResultTree(object):
                     self.processFile(file_path)
                     for subflow in self.sub_flow:
                         self.treelist.append('%s\t%s' % (file_indent, subflow))
+        
                     
     def processFile(self,file_path):
         nextstate = 's0'
