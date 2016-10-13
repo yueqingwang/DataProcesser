@@ -162,6 +162,15 @@ class TreeModel(QtCore.QAbstractItemModel):
                 # Append a new item to the current parent's list of children.
                 parents[-1].appendChild(TreeItem(columnData, parents[-1]))
                 
+    def isLeaf(self,index):
+        if not index.isValid():
+            return QtCore.QModelIndex()
+            
+        if index.internalPointer().childItems :
+            return False
+        else:
+            return True
+                
     def getTreePath(self,index):
         if not index.isValid() :
             return []

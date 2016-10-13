@@ -9,6 +9,7 @@ import sys
 import os
 import re
 from PyQt4 import QtGui, QtCore
+import pandas as pd
 
 
 import DataProcessUi
@@ -30,6 +31,8 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         
         self.DataSpace = None
         self.SelectFiles = []
+        
+
         
         
     def setupMenuBar(self):
@@ -66,17 +69,29 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
             print(self.DataSpace)
             tree = test_flow.TestResultTree(self.DataSpace,'.+\.dlg')
             tree_data = tree.treelist
+            self.testFlowInfo = pd.DataFrame(tree.flow_info,columns = test_flow.flow_info_col)
+#            self.testFlowInfo.reindex()
+            print(self.testFlowInfo.index.values)
+            self.testFlowInfo = self.testFlowInfo.set_index(['flowID'])
+            print(self.testFlowInfo)
+            #print(self.testFlowInfo.ix['3'])
 #            tree_data = TreeModel.dirsTree(self.DataSpace,'.+\.dlg')
             self.fileTreeModel = TreeModel.TreeModel(tree_data)
             self.treeFile.setModel(self.fileTreeModel)
             self.treeFile.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
+            self.treeFile.doubleClicked.connect(self.getSelectIndexData)
 
     def showSelection(self):
         for index in self.treeFile.selectedIndexes() :
             if index.isValid():
                 print( TreeModel.getDirs(self.fileTreeModel.getTreePath(index)))
                 
-#    def getSelectFiles(self):
+    def getSelectIndexData(self,index):
+        if self.fileTreeModel.isLeaf(index) == True:
+            selectflow = self.fileTreeModel.data(index,QtCore.Qt.DisplayRole)
+            print(selectflow)
+            print(self.testFlowInfo.ix[[int(selectflow)]])
+        
         
 def main():
     app = QtGui.QApplication(sys.argv)
