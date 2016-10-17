@@ -119,7 +119,9 @@ class TestResultTree(object):
         's9':[m0,'s0','s10',False,False,self.dummy_loop,self.dummy_loop],
         's10':[m9,'s3','s7',False,True,self.dummy_loop,self.update_dlg_record]
         }
+        self.flow_test_sum  = { 'test':[] }
         self.setupTree(pattern)
+        self.setupFlowTree()
         
         
     def setupTree(self,pattern):
@@ -143,8 +145,20 @@ class TestResultTree(object):
                     for subflow in self.sub_flow:
                         self.treelist.append('%s\t%s' % (file_indent, subflow))
         
-                    
+    def setupFlowTree(self):
+        self.flowtreeList = []
+        self.flowtreeList.append(self.flow_test_sum['name'])
+        for test in self.flow_test_sum['test']:
+            self.flowtreeList.append('\t'+test)
+            for record in  ['pmu','vlog','dlg']:
+                self.flowtreeList.append('\t\t'+record)
+                for i in self.flow_test_sum[test][record]:
+                    self.flowtreeList.append('\t\t\t'+i)
+            
+        
+        
     def processFile(self,file_path):
+        print(file_path)
         nextstate = 's0'
         result = False
         match_count = 0
@@ -169,6 +183,11 @@ class TestResultTree(object):
     
     def update_test(self,line):
         self.test_id = line.split()[-1]
+        if self.test_id in self.flow_test_sum['test']:
+            pass
+        else:
+            self.flow_test_sum['test'].append(self.test_id)
+            self.flow_test_sum[self.test_id] = {'pmu':[],'vlog':[],'dlg':[]}
         pass
     
     def update_flow(self,line):
@@ -186,14 +205,23 @@ class TestResultTree(object):
         currnt_flow_info = [self.flow_id,self.current_file_path,
                             self.startLine,self.endLine]
         currnt_flow_info += self.head_process()
+        self.flow_test_sum['name'] = currnt_flow_info[8]
         self.flow_info.append(currnt_flow_info)
     
     def update_pmu_record(self,line):
         pmu_record = [self.flow_id,self.test_id] + list(m4.match(line).groups())
+        if pmu_record[3] in self.flow_test_sum[self.test_id]['pmu']:
+            pass
+        else:
+            self.flow_test_sum[self.test_id]['pmu'].append(pmu_record[3])
         self.pmu_records.append(pmu_record)
         
     def update_vlog_record(self,line):
         vlog_record = [self.flow_id,self.test_id] + list(m6.match(line).groups())
+        if vlog_record[3] in self.flow_test_sum[self.test_id]['vlog']:
+            pass
+        else:
+            self.flow_test_sum[self.test_id]['vlog'].append(vlog_record[3])
         self.vlog_records.append(vlog_record)
     
     def update_dlg_record(self,line):
@@ -234,6 +262,9 @@ def val_search(val,dummy,end,line):
 if __name__ == '__main__':
     
     Tree = TestResultTree('D:\\python\\DataProcesser\\temperature','.+\.dlg')
+#    for i in Tree.flow_test_sum:
+#        print(i)
+#        print(Tree.flow_test_sum[i])
 #    print(Tree.treelist)
 #    for i in Tree.head_records:
 #        c = re.split('\w+:',i)
@@ -248,9 +279,9 @@ if __name__ == '__main__':
 #    c= re.search('Serial:(.+?)\n',Tree.head_records[1])
 #    print(c.groups())
 #    print(val_search('Serial',':','\n',Tree.head_records[1]))
-    Tree.head_process()
-    print(Tree.flow_info)
-    print(Tree.treelist)
+#    Tree.head_process()
+#    print(Tree.flow_info)
+#    print(Tree.treelist)
     
     
     

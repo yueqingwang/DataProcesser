@@ -38,7 +38,6 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         fileMenu = self.menuBar.addMenu('&File')
         openAction = fileMenu.addAction(QtGui.QIcon('./images/file/fileopen.png'),'&Open')
         openAction.setShortcut('Ctrl+O')
-        openfoldAction = fileMenu.addAction('&Open Fold')
         saveAction = fileMenu.addAction(QtGui.QIcon('./images/file/filesave.png'),'&save')
         saveAction.setShortcut('Ctrl+S')
         saveasAction = fileMenu.addAction(QtGui.QIcon('./images/file/filesaveas.png'),'&saveas')
@@ -54,6 +53,13 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         undoAction.triggered.connect(self.showSelection)
         showinfoAction.triggered.connect(self.showInfo)
         
+        anylysisMenu = self.menuBar.addMenu('&Anylysis')
+        getPmuAction = anylysisMenu.addAction('&Get PMU')
+        getVlogAction = anylysisMenu.addAction('&Get Vlog')
+        getDlgAction = anylysisMenu.addAction('&Get Dlg')
+        getPmuAction.triggered.connect(self.showPMU)
+        
+        
     def setupToolBar(self):               
         self.toolBar.addAction(QtGui.QIcon('./images/console/run_small.png'),'&File')
         
@@ -61,10 +67,6 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         print("triggered")
         
         if q.text() == '&Open' :
-            name = QtGui.QFileDialog.getOpenFileName(self, 'Open file','./',"Datlog files (*.dlg)")
-            print(name)
-            
-        if q.text() == '&Open Fold' :
             self.DataSpace = QtGui.QFileDialog.getExistingDirectory(self, 'Open fold','./')
             print(self.DataSpace)
             tree = test_flow.TestResultTree(self.DataSpace,'.+\.dlg')
@@ -80,6 +82,10 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
             self.treeFile.setModel(self.fileTreeModel)
             self.treeFile.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
             self.treeFile.doubleClicked.connect(self.getSelectIndexData)
+            flow_tree_data = tree.flowtreeList
+            self.flowTreeModel = TreeModel.TreeModel(flow_tree_data)
+            self.treeFlow.setModel(self.flowTreeModel)
+            self.treeFlow.setSelectionMode(QtGui.QAbstractItemView.ExtendedSelection)
 
     def showSelection(self):
         for index in self.treeFile.selectedIndexes() :
@@ -105,6 +111,16 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         self.Info.setLineEdits(testList)
         self.Info.show()
         
+    def showPMU(self):
+        print('trigglerd')
+        for index in self.treeFile.selectedIndexes() :
+            if index.isValid():
+                print( TreeModel.getDirs(self.fileTreeModel.getTreePath(index)))
+        
+        for index in self.treeFlow.selectedIndexes() :
+            if index.isValid():
+                print( TreeModel.getDirs(self.flowTreeModel.getTreePath(index)))
+        
 
 class InfoWidget(QtGui.QWidget,infoWidgetUi.Ui_FormInfo):
     def __init__(self, parent = None):
@@ -127,6 +143,8 @@ class InfoWidget(QtGui.QWidget,infoWidgetUi.Ui_FormInfo):
             
     def getLineEditText(self):
         return [lineEdit.displayText() for lineEdit in self.LineEditList]
+    
+
             
         
 
