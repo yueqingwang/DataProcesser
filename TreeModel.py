@@ -125,6 +125,17 @@ class TreeModel(QtCore.QAbstractItemModel):
             return QtCore.QModelIndex()
 
         return self.createIndex(parentItem.row(), 0, parentItem)
+        
+    def children(self, index):
+        if not index.isValid():
+            return QtCore.QModelIndex()
+            
+        Item = index.internalPointer()
+        childItems = Item.childItems()
+        for  c in childItems:
+            print(c.row())
+            print(c.data(0))
+        return [self.createIndex(c.row(), 0, c) for c in childItems]
 
     def rowCount(self, parent):
         if parent.column() > 0:
@@ -165,7 +176,6 @@ class TreeModel(QtCore.QAbstractItemModel):
     def isLeaf(self,index):
         if not index.isValid():
             return QtCore.QModelIndex()
-            
         if index.internalPointer().childItems :
             return False
         else:
@@ -180,6 +190,29 @@ class TreeModel(QtCore.QAbstractItemModel):
             path_list.append(parent.internalPointer().data(0))
             parent = self.parent(parent)
         return path_list
+        
+    def isParentMatch(self,index,pattern):
+        if not index.isValid():
+            return QtCore.QModelIndex()
+        parent = self.parent(index)
+        if not parent.isValid():
+            return QtCore.QModelIndex()
+        if re.match(pattern,parent.internalPointer().data(0)):
+            return True
+        else:
+            return False
+            
+#    def getLeafs(self,index):
+#        leafs = []
+#        def _getLeaf(index)
+#            if not index.isValid() :
+#                pass
+#            else:
+#                if
+#                children = self.children
+        
+            
+        
             
             
 def dirsTree(startPath,pattern):

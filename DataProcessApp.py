@@ -11,7 +11,6 @@ import re
 from PyQt4 import QtGui, QtCore
 import pandas as pd
 
-
 import DataProcessUi
 import TreeModel
 import test_flow
@@ -33,6 +32,7 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         self.DataSpace = None
         self.SelectFiles = []
         
+
 
     def setupMenuBar(self):
         fileMenu = self.menuBar.addMenu('&File')
@@ -61,7 +61,8 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         
         
     def setupToolBar(self):               
-        self.toolBar.addAction(QtGui.QIcon('./images/console/run_small.png'),'&File')
+        new = self.toolBar.addAction(QtGui.QIcon('./images/console/run_small.png'),'&File')
+        #new.triggered.connect(self.showDataTable(self.PmuRecords))
         
     def fileMenuActionSlot(self,q):
         print("triggered")
@@ -72,9 +73,8 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
             tree = test_flow.TestResultTree(self.DataSpace,'.+\.dlg')
             tree_data = tree.treelist
             self.testFlowInfo = pd.DataFrame(tree.flow_info,columns = test_flow.flow_info_col)
-#            self.testFlowInfo.reindex()
-#            print(self.testFlowInfo.index.values)
             self.testFlowInfo = self.testFlowInfo.set_index(['flowID'])
+            self.PmuRecords = pd.DataFrame(tree.pmu_records)
 #            print(self.testFlowInfo)
             #print(self.testFlowInfo.ix['3'])
 #            tree_data = TreeModel.dirsTree(self.DataSpace,'.+\.dlg')
@@ -115,12 +115,29 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         print('trigglerd')
         for index in self.treeFile.selectedIndexes() :
             if index.isValid():
-                print( TreeModel.getDirs(self.fileTreeModel.getTreePath(index)))
-        
-        for index in self.treeFlow.selectedIndexes() :
-            if index.isValid():
-                print( TreeModel.getDirs(self.flowTreeModel.getTreePath(index)))
-        
+                print(self.fileTreeModel.isParentMatch(index,'.+\.dlg'))
+                for i in self.fileTreeModel.children(index):
+                    print(self.fileTreeModel.data(i,QtCore.Qt.DisplayRole))
+                print('1')
+#        for index in self.treeFlow.selectedIndexes() :
+#            if index.isValid():
+#                print( TreeModel.getDirs(self.flowTreeModel.getTreePath(index)))
+        #self.showDataTable(self.PmuRecords)
+    
+    def showDataTable(self,DataTable):
+        tab_count = self.tabWidget.count()
+        tab = QtGui.QTableWidget()
+        self.tabWidget.addTab(tab,'tab{:d}'.format(tab_count))
+        row = len(DataTable.index)
+        col = len(DataTable.columns)
+        tab.setRowCount(row)
+        tab.setColumnCount(col)
+        for i in range(row):
+            for j in range(col):
+                data = str(DataTable.get_value(i,j))
+                newItem =  QtGui.QTableWidgetItem(data)
+                tab.setItem(i, j , newItem)
+
 
 class InfoWidget(QtGui.QWidget,infoWidgetUi.Ui_FormInfo):
     def __init__(self, parent = None):
@@ -144,7 +161,6 @@ class InfoWidget(QtGui.QWidget,infoWidgetUi.Ui_FormInfo):
     def getLineEditText(self):
         return [lineEdit.displayText() for lineEdit in self.LineEditList]
     
-
             
         
 
