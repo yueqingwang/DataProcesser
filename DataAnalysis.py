@@ -12,15 +12,26 @@ import numpy as np
 #filter_lists为要筛选的数据集合，类型为list，其中的元素
 #为list，与每一列对应
 def filter_by_list(dataframe, columns, filter_lists):
-    print('1')
     for col,filter_list in zip(columns,filter_lists):
         #判断是否在筛选list内
-        print(col)
-        print(filter_list)
         dataframe = dataframe[dataframe[col].isin(filter_list)]
-    print('2')
     return dataframe
-        
+
+#先对数据进行分组，再根据lists进行数据过滤
+#dataframe为数据表，columns为数据列名称，类型为list，其中
+#的元素为list，即分组的列；
+#filter_lists为要筛选的数据集合，类型为list，其中的元素
+#为list，与每一列分组对应
+def filter_groupby_list(dataframe, columns, filter_lists):
+    for col,filter_list in zip(columns,filter_lists):
+        #判断是否在筛选list内
+        s = pd.DataFrame()
+        for k,group in dataframe.groupby(col):
+            if k in filter_list:
+                s = pd.concat([s,group])
+            dataframe = s
+    return dataframe
+     
 #根据范围range进行数据过滤
 #dataframe为数据表，columns为数据列名称，类型为list；
 #filter_lists为要筛选的数据集合，类型为list，其中的元素
@@ -67,8 +78,9 @@ def get_statistic_groupby(dataframe,groups):
     return grouped_agg
 
 #在做统计处理前将数据的单位归一化，处理后，按照最多的数据的单位设置统计数据单位
-def get_statistic_groupby_withunit(dataframe,groups):
-    df = dataframe.drop(['TestResult'],axis = 1)
+def get_statistic_groupby_withunit(dataframe,groups,data_col,unit_col):
+    datalist = groups + [data_col] + [unit_col]
+    df = dataframe[datalist].set_index(groups)
     df1 = df.apply(unit_convert,axis = 1)
     #对数据按照选择的分组进行划分
     grouped_data = df1.groupby(level = groups)
@@ -76,15 +88,13 @@ def get_statistic_groupby_withunit(dataframe,groups):
                  ('平均值','mean'),('标准偏差','std'),('sigma+',mean_plus_std),
                  ('sigma-',mean_minus_std)]
     grouped_data_agg = grouped_data.agg(functions)
-    grouped_unit = df['unit'].groupby(level = groups)
+    grouped_unit = df[unit_col].groupby(level = groups)
     grouped_unit_agg = grouped_unit.agg(most_count)
-    grouped_unit_agg = pd.DataFrame(grouped_unit_agg,columns= ['unit'])
-    grouped_unit_agg.columns = [grouped_data_agg.columns.levels[0],['unit']]
     df2 = pd.concat([grouped_data_agg, grouped_unit_agg],axis = 1)
     df2 = df2.apply(unit_reconvert,axis = 1)
-    #df2 = pd.concat([df2, grouped_unit_agg],axis = 1)
+    df2 = df2.rename(columns = {unit_col: "unit"})
     return  df2
-    
+
 def mean_plus_std(arr):
     return np.mean(arr) + np.std(arr, ddof=1)
     
@@ -110,13 +120,14 @@ def most_count(arr):
 #将数据的单位归一化
 #如ms、us、ns统一设置成s
 def unit_convert(dlist):
+    base = 1
     if 'm' in dlist[-1] :
-        return dlist[:-1]*1e-3
-    if 'u' in dlist[-1] :
-        return dlist[:-1]*1e-6
-    if 'n' in dlist[-1] :
-        return dlist[:-1]*1e-9
-    return dlist[:-1]
+        base = 1e-3
+    elif 'u' in dlist[-1] :
+        base = 1e-6
+    elif 'n' in dlist[-1] :
+        base = 1e-9
+    return float(dlist[-2])*base
 
 #设置统计数据单位，按照单位换算数据大小
 #列表中第一个数据数据个数，不进行单位换算
@@ -136,17 +147,14 @@ if __name__ == '__main__':
     df = pd.DataFrame({
     'item':['a','b','a','b'],
     'item1':['a','a','a','a'],
-    'data1':[2.6,2.0,2.4,2.2],
-    'unit':['us','ms','ms','ms'],
+    'data1':[2600.,2.0,2.4,2.2],
+    'dunit':['us','ms','ms','ms'],
     'TestResult':[1,1,1,1]
     })
-    
-    print(filter_by_list(df,['item','item1'],[['a'],['a']]))
-    print(filter_by_range(df,['data1'],[(1,3)]))
-    df1 = filter_by_columns(df,['item1','data1'])
-    df2 = df1.set_index(['item1'])
-    print(df2)
-    print(get_statistic_groupby(df2,'item1'))
+    df = get_statistic_groupby_withunit(df,['item','item1'],'data1','dunit')
+    print(df)
+    df = df.reset_index()
+    print(df)
 
     
 

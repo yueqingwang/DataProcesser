@@ -23,13 +23,11 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         self.setupUi(self)
         self.setupMenuBar()
         self.setupToolBar()
-        
         self.splitter = QtGui.QSplitter()
         self.splitter.addWidget(self.widget_left)
         self.splitter.addWidget(self.widget_mid)
         self.splitter.addWidget(self.widget_right)
         self.setCentralWidget(self.splitter)
-        
         self.DataSpace = None
         self.SelectFiles = []
         
@@ -114,21 +112,16 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         
     def showPMU(self):
         print('trigglerd')
-        for index in self.treeFile.selectedIndexes() :
-            if index.isValid():
-                leafIndex = self.fileTreeModel.getLeafs(index)
-                dataIndex = filter(lambda x :self.fileTreeModel.isParentMatch(x,'.+\.dlg'), leafIndex)
-                datafilter = [int(self.fileTreeModel.data(i,QtCore.Qt.DisplayRole)) for i in dataIndex]
-                print('ok')
+        SelectedDevice = self.getSelectedDevice()
+        SelectedTest = self.getSelectedTest('pmu')
         records = self.PmuRecords
-        #print(records)
-        records = das.filter_by_list(records,[0],[datafilter])
-#        print(records)
-#        for index in self.treeFlow.selectedIndexes() :
-#            if index.isValid():
-#                print( TreeModel.getDirs(self.flowTreeModel.getTreePath(index)))
-        print(records)
+        records = das.filter_groupby_list(records,[[0],[1,3]],[SelectedDevice,SelectedTest])
         records= records.reset_index(drop=True)
+        records.columns = ['flowID','TestName','PHY','Pin','TestDescription',
+                           'Force','ForceU','fRange','fRangeU','Measure','MeasureU','mRange',
+                           'mRangeU','Max','MaxU','Min','MinU','PassFail']
+        records = das.get_statistic_groupby_withunit(records,['TestName','Pin'],'Measure','MeasureU')
+        records = records.reset_index()
         print(records)
         self.showDataTable(records)
     
@@ -137,16 +130,42 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         tab = QtGui.QTableWidget()
         self.tabWidget.addTab(tab,'tab{:d}'.format(tab_count))
         row = len(DataTable.index)
+        rows = DataTable.index
         col = len(DataTable.columns)
+        cols = DataTable.columns
         tab.setRowCount(row)
         tab.setColumnCount(col)
-#        tab.setHorizontalHeaderLabels(list(DataTable.columns))
+        tab.setHorizontalHeaderLabels(list(DataTable.columns))
         for i in range(row):
             for j in range(col):
-                data = str(DataTable.get_value(i,j))
+                data = str(DataTable.get_value(rows[i],cols[j]))
                 newItem =  QtGui.QTableWidgetItem(data)
                 tab.setItem(i, j , newItem)
-
+                
+    def getSelectedDevice(self):
+        SelectedDevice = []
+        for index in self.treeFile.selectedIndexes() :
+            if index.isValid():
+                leafIndex = self.fileTreeModel.getLeafs(index)
+                deviceIndex = filter(lambda x :self.fileTreeModel.isParentMatch(x,'.+\.dlg'), leafIndex)
+                for device in deviceIndex:
+                    deviceData = int(self.fileTreeModel.data(device,QtCore.Qt.DisplayRole))
+                    SelectedDevice.append((deviceData,))
+        return SelectedDevice
+        
+    def getSelectedTest(self,DataType):
+        SelectedTest = []
+        for index in self.treeFlow.selectedIndexes():
+            if index.isValid():
+                leafIndex = self.flowTreeModel.getLeafs(index)
+                valIndex = filter(lambda x :self.flowTreeModel.isParentMatch(x,DataType), leafIndex)
+                for val in valIndex:
+                    test = self.flowTreeModel.parent(self.flowTreeModel.parent(val))
+                    valData = self.flowTreeModel.data(val,QtCore.Qt.DisplayRole)
+                    testData = self.flowTreeModel.data(test,QtCore.Qt.DisplayRole)
+                    SelectedTest.append((testData,valData))
+        return SelectedTest
+        
 
 class InfoWidget(QtGui.QWidget,infoWidgetUi.Ui_FormInfo):
     def __init__(self, parent = None):
