@@ -129,12 +129,9 @@ class TreeModel(QtCore.QAbstractItemModel):
     def children(self, index):
         if not index.isValid():
             return QtCore.QModelIndex()
-            
         Item = index.internalPointer()
-        childItems = Item.childItems()
-        for  c in childItems:
-            print(c.row())
-            print(c.data(0))
+        childItems = Item.childItems
+#        return [self.createIndex(c.row(), 0, c) for i,c in enumerate(childItems)]
         return [self.createIndex(c.row(), 0, c) for c in childItems]
 
     def rowCount(self, parent):
@@ -145,7 +142,6 @@ class TreeModel(QtCore.QAbstractItemModel):
             parentItem = self.rootItem
         else:
             parentItem = parent.internalPointer()
-
         return parentItem.childCount()
 
     def setupModelData(self, lines, parent):
@@ -202,19 +198,21 @@ class TreeModel(QtCore.QAbstractItemModel):
         else:
             return False
             
-#    def getLeafs(self,index):
-#        leafs = []
-#        def _getLeaf(index)
-#            if not index.isValid() :
-#                pass
-#            else:
-#                if
-#                children = self.children
+    def getLeafs(self,index):
+        leafs = []
+        def _getLeaf(subindex):
+            if not index.isValid() :
+                pass
+            else:
+                if self.isLeaf(subindex):
+                    leafs.append(subindex)
+                else:
+                    for childrenIndex in self.children(subindex):
+                        _getLeaf(childrenIndex)
+        _getLeaf(index)
+        return leafs
         
-            
-        
-            
-            
+
 def dirsTree(startPath,pattern):
     '''树形打印出目录结构'''
     dirsTreeList = []
@@ -245,24 +243,25 @@ if __name__ == '__main__':
 
     app = QtGui.QApplication(sys.argv)
     data = dirsTree('D:\\python\\DataProcesser\\FengZhuangHou','.+\.dlg')
-    print(data)
+    #print(data)
     model = TreeModel(data)
-#    print(model.rowCount(model.rootItem ))
-#    print(model.rootItem.itemData)
-#    for item in model.rootItem.childItems:
-#        print(item.itemData)
     index = model.createIndex(0, 0, model.rootItem)
-    print(model.columnCount(index),model.itemData(index))
+    #print(model.columnCount(index),model.itemData(index))
     index = model.index(0,0,index)
-    print(model.rowCount(index),model.itemData(index))
-    index = model.index(0,0,index)
-    print(model.rowCount(index),model.itemData(index))
-    index = model.index(0,0,index)
-    print(model.rowCount(index),model.itemData(index))
-    index = model.index(1,0,index)
-    print(model.rowCount(index),model.itemData(index))
-    index = model.index(1,0,index)
-    print(model.rowCount(index),model.data(index,0))
-    path = model.getTreePath(index)
-    print(path)
-    print(getDirs(path))
+    for subindex in model.getLeafs(index):
+        print(model.itemData(subindex))
+#    childrenIndex = model.children(index)
+#    for i in childrenIndex :
+#        print(model.itemData(i))
+#    print(model.rowCount(index),model.itemData(index))
+#    index = model.index(0,0,index)
+#    print(model.rowCount(index),model.itemData(index))
+#    index = model.index(0,0,index)
+#    print(model.rowCount(index),model.itemData(index))
+#    index = model.index(1,0,index)
+#    print(model.rowCount(index),model.itemData(index))
+#    index = model.index(1,0,index)
+#    print(model.rowCount(index),model.data(index,0))
+#    path = model.getTreePath(index)
+#    print(path)
+#    print(getDirs(path))

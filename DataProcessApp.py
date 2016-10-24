@@ -15,6 +15,7 @@ import DataProcessUi
 import TreeModel
 import test_flow
 import infoWidgetUi
+import DataAnalysis as das
 
 class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
     def __init__(self, parent = None):
@@ -115,14 +116,21 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         print('trigglerd')
         for index in self.treeFile.selectedIndexes() :
             if index.isValid():
-                print(self.fileTreeModel.isParentMatch(index,'.+\.dlg'))
-                for i in self.fileTreeModel.children(index):
-                    print(self.fileTreeModel.data(i,QtCore.Qt.DisplayRole))
-                print('1')
+                leafIndex = self.fileTreeModel.getLeafs(index)
+                dataIndex = filter(lambda x :self.fileTreeModel.isParentMatch(x,'.+\.dlg'), leafIndex)
+                datafilter = [int(self.fileTreeModel.data(i,QtCore.Qt.DisplayRole)) for i in dataIndex]
+                print('ok')
+        records = self.PmuRecords
+        #print(records)
+        records = das.filter_by_list(records,[0],[datafilter])
+#        print(records)
 #        for index in self.treeFlow.selectedIndexes() :
 #            if index.isValid():
 #                print( TreeModel.getDirs(self.flowTreeModel.getTreePath(index)))
-        #self.showDataTable(self.PmuRecords)
+        print(records)
+        records= records.reset_index(drop=True)
+        print(records)
+        self.showDataTable(records)
     
     def showDataTable(self,DataTable):
         tab_count = self.tabWidget.count()
@@ -132,6 +140,7 @@ class DataProcessApp(QtGui.QMainWindow, DataProcessUi.Ui_MainWindow):
         col = len(DataTable.columns)
         tab.setRowCount(row)
         tab.setColumnCount(col)
+#        tab.setHorizontalHeaderLabels(list(DataTable.columns))
         for i in range(row):
             for j in range(col):
                 data = str(DataTable.get_value(i,j))

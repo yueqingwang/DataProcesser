@@ -12,9 +12,13 @@ import numpy as np
 #filter_lists为要筛选的数据集合，类型为list，其中的元素
 #为list，与每一列对应
 def filter_by_list(dataframe, columns, filter_lists):
+    print('1')
     for col,filter_list in zip(columns,filter_lists):
         #判断是否在筛选list内
+        print(col)
+        print(filter_list)
         dataframe = dataframe[dataframe[col].isin(filter_list)]
+    print('2')
     return dataframe
         
 #根据范围range进行数据过滤
@@ -82,10 +86,10 @@ def get_statistic_groupby_withunit(dataframe,groups):
     return  df2
     
 def mean_plus_std(arr):
-    return np.mean(arr) + np.std(arr)
+    return np.mean(arr) + np.std(arr, ddof=1)
     
 def mean_minus_std(arr):
-    return np.mean(arr) - np.std(arr)
+    return np.mean(arr) - np.std(arr, ddof=1)
 
 #计算字符串列表中个数最多的字符串
 def most_count(arr):
@@ -132,13 +136,17 @@ if __name__ == '__main__':
     df = pd.DataFrame({
     'item':['a','b','a','b'],
     'item1':['a','a','a','a'],
-    'data1':[1200.,0.96,2.4,2.2],
+    'data1':[2.6,2.0,2.4,2.2],
     'unit':['us','ms','ms','ms'],
     'TestResult':[1,1,1,1]
     })
     
     print(filter_by_list(df,['item','item1'],[['a'],['a']]))
     print(filter_by_range(df,['data1'],[(1,3)]))
+    df1 = filter_by_columns(df,['item1','data1'])
+    df2 = df1.set_index(['item1'])
+    print(df2)
+    print(get_statistic_groupby(df2,'item1'))
 
     
 
